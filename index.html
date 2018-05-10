@@ -72,7 +72,7 @@
   var app = new Vue( {
     el: '#app',
     data: {
-      //api-key 通过 https://developer.nytimes.com/ 点击右上角的 Get NYT API Key 申请
+      //api-key：https://developer.nytimes.com/
       api_key: "364d8beb1f4a40bab7b7b825c5d6f648",
       search: "",
       popular: [],
@@ -81,7 +81,7 @@
     created: function () {
       var that = this
       that.loading = true
-      //获取流行新闻
+      // Most popular
       var url = "https://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/1.json";
       url += '?' + $.param( {
         'api-key': that.api_key
