@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+
+  <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.bootcss.com/axios/0.16.0/axios.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdn.bootcss.com/spectre.css/0.5.1/spectre.min.css">
+  <link rel="stylesheet" href="https://cdn.bootcss.com/spectre.css/0.5.1/spectre-exp.min.css">
+  <link rel="stylesheet" href="https://cdn.bootcss.com/spectre.css/0.5.1/spectre-icons.min.css">
+
+  <title>News Today</title>
+  <style>
+    a {
+      text-decoration: none !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+
+<body style="background-color: #f8f9fa;">
+  <div class="container" id="app" style="padding: 0px;">
+    <div v-if="toast.show" class="toast toast-warning" style="position: absolute;width:20%;right: 32px;top:64px;">
+      {{toast.content}}
+    </div>
+
+    <div class="container" style="background-color: #fff; box-shadow: 0 3px 6px rgba(216, 217, 244, 0.3); position: fixed;top:0;">
+      <div class="container grid-lg">
+        <div class="columns">
+          <div class="column col-12" style="padding:8px;">
+            <div class="navbar">
+              <section class="navbar-section">
+                <a href="index.html" class="navbar-brand mr-2"><strong>News Today</strong></a>
+              </section>
+              <section class="navbar-center">
+                <button class="btn loading btn-link" v-if="loading">button</button>
+              </section>
+              <section class="navbar-section">
+                <div class="input-group input-inline">
+                  <input class="form-input" type="text" placeholder="search" v-model="search">
+                  <button class="btn btn-primary input-group-btn" v-on:click="searchNews">Search</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container grid-lg">
+      <div class="columns" style="margin-top: 16px ; margin-bottom: 16px;">
+        <div class="column col-8 col-md-12" style="margin-top:64px;">
+          <table class="table table-hover">
+            <tr v-for="item in news">
+              <td>
+                <div class="columns">
+                  <div class="column col-12">
+                    <a v-bind:href="item.web_url" style="">
+                      <h5>{{item.headline.main}}</h5>
+                      <blockquote style="color: #000;">
+                        <p>{{item.snippet}}</p>
+                        <cite v-if="item.source!=''">{{item.source}}</cite>
+                      </blockquote>
+                    </a>
+                  </div>
+                </div>
+
+              </td>
+            </tr>
+          </table>
+          <br />
+          <button class="btn" v-on:click="prev" v-if="page>0">prev</button>
+          <button class="btn" v-on:click="next">next</button>
+
+        </div>
+        <div class="column col-4 col-md-12" style="margin-top:64px;">
+          <h6>Newest</h6>
+          <table class="table table-hover">
+            <tr v-for="item in newest">
+              <td>
+                <a v-bind:href="item.web_url">{{item.headline.main}}</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+<script>
+  Vue.config.devtools = true;
+
+  var app = new Vue( {
+    el: '#app',
+    data: {
+      //api-key 通过 https://developer.nytimes.com/ 点击右上角的 Get NYT API Key 申请
+      api_key: "7c796f15dab54f2cafeb14bd6b9b8785",
+      search: "",
+      news: [],
+      newest: [],
+      page: 0,
+      loading: false,
+      toast: {
+        'show': false,
+        'content': ""
+      },
+    },
+    created: function () {
+      var that = this
+      that.loading = true
+
+      function getParam( paramName ) {
+        paramValue = "", isFound = !1;
+        if ( this.location.search.indexOf( "?" ) == 0 && this.location.search.indexOf( "=" ) > 1 ) {
+          arrSource = unescape( this.location.search ).substring( 1, this.location.search.length ).split( "&" ), i = 0;
+          while ( i < arrSource.length && !isFound ) arrSource[ i ].indexOf( "=" ) > 0 && arrSource[ i ].split( "=" )[ 0 ].toLowerCase() == paramName.toLowerCase() && ( paramValue = arrSource[ i ].split( "=" )[ 1 ], isFound = !0 ), i++
+        }
+        return paramValue == "" && ( paramValue = null ), paramValue
+      }
+
+      var key=getParam("key")
+      if ( key!= null ) {
+        that.search =key
+      }
+
+      //获取搜索结果
+
+      var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+      url += '?' + $.param( {
+        'api-key': that.api_key,
+        //'begin_date': new Date().getFullYear() + ( "0" + ( new Date().getMonth() + 1 ) ).slice( -2 ) + ( "0" + new Date().getDate() ).slice( -2 ),
+        //'page': this.page + 1,
+        'sort': "newest",
+        'q': that.search,
+      } );
+
+      axios.get( url )
+        .then( ( res ) => {
+          console.log( res )
+          if ( res.status == 200 && res.data.status == "OK" ) {
+            that.page == 0
+            that.news = res.data.response.docs
+          } else {
+            that.toast.show = true
+            that.toast.content = "Search Result load fail."
+            setTimeout( function () {
+              that.toast.show = false
+            }, 2000 )
+          }
+
+        } )
+
+    },
+    mounted: function () {
+      var that = this
+      that.loading = true
+
+      setTimeout( function () {
+        //获取最新新闻
+        var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+        url += '?' + $.param( {
+          'api-key': that.api_key,
+          'begin_date': new Date().getFullYear() + ( "0" + ( new Date().getMonth() + 1 ) ).slice( -2 ) + ( "0" + new Date().getDate() ).slice( -2 ),
+          'page': that.page,
+          'sort': "newest"
+        } );
+
+        axios.get( url )
+          .then( ( res ) => {
+            console.log( res )
+            if ( res.status == 200 && res.data.status == "OK" ) {
+              that.newest = res.data.response.docs
+            } else {
+              that.toast.show = true
+              that.toast.content = "Newest news load fail."
+              setTimeout( function () {
+                that.toast.show = false
+              }, 2000 )
+            }
+
+          } )
+      }, 1000 )
+
+      var timer = setInterval( function () {
+        if ( that.newest.length > 0 && that.news.length > 0 ) {
+          that.loading = false
+          clearInterval( timer )
+        }
+      }, 500 )
+
+    },
+    methods: {
+      prev: function () {
+        this.loading = true
+        var that = this
+        var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+        url += '?' + $.param( {
+          'api-key': this.api_key,
+          //'begin_date': new Date().getFullYear() + ( "0" + ( new Date().getMonth() + 1 ) ).slice( -2 ) + ( "0" + new Date().getDate() ).slice( -2 ),
+          'page': this.page - 1,
+          'sort': "newest",
+          'q': that.search,
+        } );
+
+        axios.get( url )
+          .then( ( res ) => {
+            this.loading = false
+            console.log( res )
+            if ( res.status == 200 && res.data.status == "OK" ) {
+              this.page -= 1
+              this.news = res.data.response.docs
+            } else {
+              that.toast.show = true
+              that.toast.content = "Search Result load fail."
+              setTimeout( function () {
+                that.toast.show = false
+              }, 2000 )
+            }
+          } )
+      },
+      next: function () {
+        this.loading = true
+        var that = this
+        var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+        url += '?' + $.param( {
+          'api-key': this.api_key,
+          //'begin_date': new Date().getFullYear() + ( "0" + ( new Date().getMonth() + 1 ) ).slice( -2 ) + ( "0" + new Date().getDate() ).slice( -2 ),
+          'page': this.page + 1,
+          'sort': "newest",
+          'q': that.search,
+        } );
+
+        axios.get( url )
+          .then( ( res ) => {
+            this.loading = false
+            console.log( res )
+            if ( res.status == 200 && res.data.status == "OK" ) {
+              this.page += 1
+              this.news = res.data.response.docs
+            } else {
+              that.toast.show = true
+              that.toast.content = "Search Result load fail."
+              setTimeout( function () {
+                that.toast.show = false
+              }, 2000 )
+            }
+          } )
+      },
+      searchNews: function () {
+        this.loading = true
+        var that = this
+        var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+        url += '?' + $.param( {
+          'api-key': this.api_key,
+          //'begin_date': new Date().getFullYear() + ( "0" + ( new Date().getMonth() + 1 ) ).slice( -2 ) + ( "0" + new Date().getDate() ).slice( -2 ),
+          //'page': this.page + 1,
+          'sort': "newest",
+          'q': this.search,
+          'page': 0,
+        } );
+
+        axios.get( url )
+          .then( ( res ) => {
+            this.loading = false
+            console.log( res )
+            if ( res.status == 200 && res.data.status == "OK" ) {
+              this.page = 0
+              this.news = res.data.response.docs
+            } else {
+              that.toast.show = true
+              that.toast.content = "Search Result load fail."
+              setTimeout( function () {
+                that.toast.show = false
+              }, 2000 )
+            }
+          } )
+      },
+    },
+
+  } )
+</script>
+
+</html>
