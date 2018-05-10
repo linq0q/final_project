@@ -98,7 +98,7 @@
   var app = new Vue( {
     el: '#app',
     data: {
-      //api-key 通过 https://developer.nytimes.com/ 点击右上角的 Get NYT API Key 申请
+      //api-key: https://developer.nytimes.com/
       api_key: "7c796f15dab54f2cafeb14bd6b9b8785",
       search: "",
       news: [],
@@ -128,7 +128,7 @@
         that.search =key
       }
 
-      //获取搜索结果
+      //Search result
 
       var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
       url += '?' + $.param( {
@@ -161,7 +161,7 @@
       that.loading = true
 
       setTimeout( function () {
-        //获取最新新闻
+        //current news
         var url = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
         url += '?' + $.param( {
           'api-key': that.api_key,
